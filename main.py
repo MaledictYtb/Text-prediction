@@ -1,6 +1,7 @@
 import time
 import io
 
+
 class Mots:
     def __init__(self, mot, parent):
         self.__parent = parent
@@ -11,6 +12,9 @@ class Mots:
     def get_enfants(self):
         return self.__enfants
 
+    def get_parent(self):
+        return self.__parent
+
     def get_compteur(self):
         return self.__compteur
 
@@ -20,12 +24,11 @@ class Mots:
     def add_mot(self, mot):
         if mot not in self.__enfants:
             self.__enfants[mot] = Mots(mot, self)
-        self.__enfants[mot].__compteur += 1
-
-        #Ajouter à liste_mots
-        if mot not in liste_mots:
-            liste_mots[mot] = []
+            if mot not in liste_mots:
+                liste_mots[mot] = []
             liste_mots[mot].append(self.__enfants[mot])
+
+        self.__enfants[mot].__compteur += 1
 
 def ajouter_phrase(phrase):
     liste = phrase.split()
@@ -37,39 +40,74 @@ def ajouter_phrase(phrase):
 def ajouter_dic(dic_path):
     txt = io.open(dic_path, encoding='ISO-8859-1').read()
     txt = txt.splitlines()
-    for i in txt:
-        ajouter_phrase(i)
+    for i in range(100000): #J'ai remplacé par 100000 pcq Wikipédia est trop gros
+        ajouter_phrase(txt[i])
 
-def prediction(phrase):
-    if not phrase[-1] in liste_mots:
-        return False
-    liste_mots_prediction = {}
+def most_probable_word(phrase):
+    liste_mots_prediction = []  # (class mot, probabilité, mot)
     for i in liste_mots[phrase[-1]]:
         enfants = i.get_enfants()
-        print(i.get_mot())
         total = 0
         max = (None, 0)
 
-        #Set total and max
+        # Check if there's enfants, because of errors if there's none
+        if enfants == {}:
+            continue
+
+        # Set total and max
         for j in enfants.values():
             total += j.get_compteur()
             if max[1] < j.get_compteur():
                 max = (j, j.get_compteur())
-        print(max[0].get_mot(),  max[1]/total)
+        liste_mots_prediction.append([max[0], max[1] / total, max[0].get_mot()])
+    return liste_mots_prediction
+
+def nb_correspondances(phrase, mot):
+    compteur = 0
+    mot = mot.get_parent()
+    for i in range(len(phrase) - 1, -1, -1):
+        if phrase[i] == mot.get_mot():
+            compteur += 1
+        if mot.get_parent() is None:
+            break
+        mot = mot.get_parent()
+    return compteur
+
+def prediction(phrase):
+    phrase = phrase.split()
+    #Pre condition
+    if not phrase:
+        return False
+    if not phrase[-1] in liste_mots:
+        return False
+
+    #List all most probable words
+    liste_mots_prediction = most_probable_word(phrase)
+
+    #Ajoute le nombre de mots précédents qui correspondent à la phrase à liste_mots_prediction
+    for i in range(len(liste_mots_prediction)):
+        mot = liste_mots_prediction[i][0]
+        liste_mots_prediction[i].append(nb_correspondances(phrase, mot))
+
+    liste_mots_prediction.sort(key=lambda x: x[3], reverse=True)
+    return liste_mots_prediction[0][2], liste_mots_prediction[i][3]
+
+
+
 
 liste_mots = {}
 mot_originel = Mots(None, None)
-ajouter_dic("/home/maledict/Téléchargements/disk1.txt")
+start = time.time()
+#ajouter_dic("/home/maledict/Téléchargements/disk1.txt")
+#ajouter_dic("/home/maledict/Téléchargements/input.txt")
+
+ajouter_dic("/home/maledict/Téléchargements/simplewiki-20240901-pages-articles-multistream/simplewiki-20240901-pages-articles-multistream.xml")
+
+stop = time.time()
+print(stop-start)
+
+
 
 while True:
     phrase = str(input("Entrez votre phrase en anglais : "))
-    print("==============================================================")
-    for i in mot_originel.get_enfants()["Why"].get_enfants().values():
-        print(i.get_mot(), i.get_compteur())
-    print("==============================================================")
-    print(liste_mots["Why"])
-
-    """
-    L'ajout des mots à liste_mots ne marche sûrement pas correctement ? 
-    A tester plus en détail
-    """
+    print(prediction(phrase))
