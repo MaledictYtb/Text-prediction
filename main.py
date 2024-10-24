@@ -31,17 +31,21 @@ class Mots:
         self.__enfants[mot].__compteur += 1
 
 def ajouter_phrase(phrase):
-    liste = phrase.split()
+    liste = (phrase
+                .replace('"', '')
+                .replace('[noise]', '')
+            .split())
     mot = mot_originel
     for i in range(len(liste)):
         mot.add_mot(liste[i])
         mot = mot.get_enfants()[liste[i]]
 
-def ajouter_dic(dic_path):
+def ajouter_dic(dic_path, lines=0):
     txt = io.open(dic_path, encoding='utf-8').read().replace('.', '').lower().splitlines()
-    whitelist = set("abcdefghijklmnopqrstuvwxyz'-éèàù")
+    if lines == 0:
+        lines = len(txt)
 
-    for i in range(len(txt)): #J'ai remplacé par 100000 pcq Wikipédia est trop gros (len(txt))
+    for i in range(lines):
         ajouter_phrase(txt[i])
 
 def most_probable_word(phrase):
@@ -90,7 +94,10 @@ def prediction(phrase):
         mot = liste_mots_prediction[i][0]
         liste_mots_prediction[i].append(nb_correspondances(phrase, mot))
 
-    liste_mots_prediction.sort(key=lambda x: x[3], reverse=True)
+    liste_mots_prediction.sort(key=lambda x: (x[3], x[1]), reverse=True)
+
+    if liste_mots_prediction is None:
+        return False
     return liste_mots_prediction[0][2], liste_mots_prediction[0][3]
 
 
@@ -100,16 +107,18 @@ liste_mots = {}
 mot_originel = Mots(None, None)
 start = time.time()
 
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_CID_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_CLAPI_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_ESLO_free_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_LINAGORA_free_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_OFROM_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_ORFEO_coralrom_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_ORFEO_crfp_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_ParisStories_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_PFC_free_train.txt")
-ajouter_dic("/home/maledict/Téléchargements/data/french/FR_Rhapsodie_train.txt")
+ajouter_dic("data/french/FR_CID_train.txt")
+ajouter_dic("data/french/FR_CLAPI_train.txt")
+ajouter_dic("data/french/FR_ESLO_free_train.txt")
+ajouter_dic("data/french/FR_LINAGORA_free_train.txt")
+ajouter_dic("data/french/FR_OFROM_train.txt")
+ajouter_dic("data/french/FR_ORFEO_coralrom_train.txt")
+ajouter_dic("data/french/FR_ORFEO_crfp_train.txt")
+ajouter_dic("data/french/FR_ParisStories_train.txt")
+ajouter_dic("data/french/FR_PFC_free_train.txt")
+ajouter_dic("data/french/FR_Rhapsodie_train.txt")
+
+ajouter_dic("data/english/sms.txt", 1000000)
 
 stop = time.time()
 print(stop-start)
@@ -117,8 +126,5 @@ print(stop-start)
 
 
 while True:
-    phrase = str(input("Entrez votre phrase en anglais : "))
-    start = time.time()
+    phrase = str(input("Entrez votre phrase en français : "))
     print(prediction(phrase))
-    stop = time.time()
-    print(stop-start)
