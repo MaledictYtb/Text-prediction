@@ -38,8 +38,9 @@ def ajouter_phrase(phrase):
         mot = mot.get_enfants()[liste[i]]
 
 def ajouter_dic(dic_path):
-    txt = io.open(dic_path, encoding='ISO-8859-1').read()
-    txt = txt.splitlines()
+    txt = io.open(dic_path, encoding='utf-8').read().replace('.', '').lower().splitlines()
+    whitelist = set("abcdefghijklmnopqrstuvwxyz'-éèàù")
+
     for i in range(len(txt)): #J'ai remplacé par 100000 pcq Wikipédia est trop gros (len(txt))
         ajouter_phrase(txt[i])
 
@@ -90,7 +91,7 @@ def prediction(phrase):
         liste_mots_prediction[i].append(nb_correspondances(phrase, mot))
 
     liste_mots_prediction.sort(key=lambda x: x[3], reverse=True)
-    return liste_mots_prediction[0][2], liste_mots_prediction[i][3]
+    return liste_mots_prediction[0][2], liste_mots_prediction[0][3]
 
 
 
